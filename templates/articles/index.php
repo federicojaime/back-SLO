@@ -76,7 +76,12 @@ ob_start();
                                         <i class="fas fa-file-text"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-1 fw-semibold"><?= htmlspecialchars($article['title']) ?></h6>
+                                        <h6 class="mb-1 fw-semibold">
+                                            <a href="/back-SLO/public/articles/view/<?= $article['id'] ?>" 
+                                               class="text-decoration-none text-dark">
+                                                <?= htmlspecialchars($article['title']) ?>
+                                            </a>
+                                        </h6>
                                         <div class="d-flex align-items-center gap-2">
                                             <small class="text-muted">ID: <?= $article['id'] ?></small>
                                             <?php if ($article['featured'] ?? false): ?>
@@ -142,20 +147,30 @@ ob_start();
                             </td>
                             <td>
                                 <div class="d-flex gap-1">
-                                    <button class="btn btn-sm btn-outline-primary" title="Editar" data-bs-toggle="tooltip">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-info" title="Ver" data-bs-toggle="tooltip">
+                                    <a href="/back-SLO/public/articles/view/<?= $article['id'] ?>" 
+                                       class="btn btn-sm btn-outline-info" title="Ver" data-bs-toggle="tooltip">
                                         <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success" title="Duplicar" data-bs-toggle="tooltip">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
+                                    </a>
+                                    <a href="/back-SLO/public/articles/edit/<?= $article['id'] ?>" 
+                                       class="btn btn-sm btn-outline-primary" title="Editar" data-bs-toggle="tooltip">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
                                     <div class="dropdown">
                                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                             <i class="fas fa-ellipsis-v"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="/back-SLO/public/articles/view/<?= $article['id'] ?>">
+                                                    <i class="fas fa-eye me-2"></i>Ver artículo
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="/back-SLO/public/articles/edit/<?= $article['id'] ?>">
+                                                    <i class="fas fa-edit me-2"></i>Editar
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
                                             <?php if ($article['status'] === 'draft'): ?>
                                             <li><a class="dropdown-item" href="#"><i class="fas fa-globe me-2"></i>Publicar</a></li>
                                             <?php elseif ($article['status'] === 'published'): ?>
@@ -163,7 +178,13 @@ ob_start();
                                             <?php endif; ?>
                                             <li><a class="dropdown-item" href="#"><i class="fas fa-star me-2"></i>Destacar</a></li>
                                             <li><hr class="dropdown-divider"></li>
-                                            <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Eliminar</a></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" 
+                                                   href="/back-SLO/public/articles/delete/<?= $article['id'] ?>"
+                                                   onclick="return confirm('¿Estás seguro de eliminar este artículo?')">
+                                                    <i class="fas fa-trash me-2"></i>Eliminar
+                                                </a>
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>
