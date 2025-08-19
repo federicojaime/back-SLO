@@ -205,5 +205,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-include '../base.php';
+include __DIR__ . '/../base.php';
 ?>

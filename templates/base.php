@@ -64,7 +64,7 @@
                             </li>
                         </ul>
                     </div>
-
+                    | <!--
                     <div class="nav-section">
                         <span class="nav-section-title">CONFIGURACIÓN</span>
                         <ul class="nav-items">
@@ -81,8 +81,10 @@
                                 </a>
                             </li>
                         </ul>
-                    </div>
+                    </div>-->
                 </div>
+
+
 
                 <div class="sidebar-footer">
                     <div class="user-info">
