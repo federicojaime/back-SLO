@@ -411,6 +411,199 @@ switch ($path) {
             echo json_encode(['available' => !$exists]);
         }
         break;
+    // API para el frontend público
+    case '/api/news':
+        header('Content-Type: application/json');
+        header('Access-Control-Allow-Origin: *');
+
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $limit = min(50, max(1, (int)($_GET['limit'] ?? 12)));
+        $category = $_GET['category'] ?? '';
+        $featured = $_GET['featured'] ?? '';
+        $offset = ($page - 1) * $limit;
+
+        $sql = "
+            SELECT 
+                a.id, a.title, a.slug, a.excerpt, a.featured_image, 
+                a.featured_image_alt, a.status, a.featured, a.views,
+                a.created_at, a.published_at, a.updated_at,
+                u.full_name AS author_name,
+                c.name AS category_name, c.slug AS category_slug, c.color AS category_color
+            FROM articles a
+            LEFT JOIN users u ON a.author_id = u.id
+            LEFT JOIN categories c ON a.category_id = c.id
+            WHERE a.status = 'published'
+        ";
+
+        $params = [];
+
+        if ($category && $category !== 'all') {
+            $sql .= " AND c.slug = ?";
+            $params[] = $category;
+        }
+
+        if ($featured === 'true') {
+            $sql .= " AND a.featured = 1";
+        }
+
+        $sql .= " ORDER BY a.published_at DESC, a.created_at DESC LIMIT :limit OFFSET :offset";
+
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $i => $param) {
+            $stmt->bindValue($i + 1, $param);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Formatear fechas y agregar URL de imagen por defecto
+        foreach ($articles as &$article) {
+            $article['published_at_formatted'] = $article['published_at']
+                ? date('d/m/Y H:i', strtotime($article['published_at']))
+                : date('d/m/Y H:i', strtotime($article['created_at']));
+
+            $article['time_ago'] = timeAgo($article['published_at'] ?: $article['created_at']);
+
+            // Si no hay imagen destacada, usar placeholder
+            if (!$article['featured_image']) {
+                $article['featured_image'] = "https://via.placeholder.com/400x240/" .
+                    substr(md5($article['category_name'] ?: 'general'), 0, 6) . "/ffffff?text=" .
+                    urlencode($article['category_name'] ?: 'Noticias');
+            }
+
+            // URL del artículo
+            $article['url'] = "/articulo/" . $article['slug'];
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => $articles,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => count($articles)
+            ]
+        ]);
+        break;
+
+    case '/api/categories':
+        header('Content-Type: application/json');
+        header('Access-Control-Allow-Origin: *');
+
+        $stmt = $pdo->query("
+            SELECT c.*, COUNT(a.id) as article_count
+            FROM categories c
+            LEFT JOIN articles a ON c.id = a.category_id AND a.status = 'published'
+            WHERE c.status = 'active'
+            GROUP BY c.id
+            ORDER BY c.sort_order ASC, c.name ASC
+        ");
+
+        echo json_encode([
+            'success' => true,
+            'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)
+        ]);
+        break;
+
+    case '/api/featured':
+        header('Content-Type: application/json');
+        header('Access-Control-Allow-Origin: *');
+
+        $stmt = $pdo->prepare("
+            SELECT 
+                a.id, a.title, a.slug, a.excerpt, a.featured_image, 
+                a.featured_image_alt, a.views, a.published_at, a.created_at,
+                u.full_name AS author_name,
+                c.name AS category_name, c.slug AS category_slug, c.color AS category_color
+            FROM articles a
+            LEFT JOIN users u ON a.author_id = u.id
+            LEFT JOIN categories c ON a.category_id = c.id
+            WHERE a.status = 'published' AND a.featured = 1
+            ORDER BY a.published_at DESC, a.created_at DESC
+            LIMIT 1
+        ");
+        $stmt->execute();
+
+        $featured = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($featured) {
+            $featured['published_at_formatted'] = $featured['published_at']
+                ? date('d/m/Y H:i', strtotime($featured['published_at']))
+                : date('d/m/Y H:i', strtotime($featured['created_at']));
+
+            $featured['time_ago'] = timeAgo($featured['published_at'] ?: $featured['created_at']);
+            $featured['url'] = "/articulo/" . $featured['slug'];
+
+            if (!$featured['featured_image']) {
+                $featured['featured_image'] = "https://via.placeholder.com/800x400/" .
+                    substr(md5($featured['category_name'] ?: 'general'), 0, 6) . "/ffffff?text=" .
+                    urlencode($featured['category_name'] ?: 'Noticia+Destacada');
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => $featured
+        ]);
+        break;
+
+    case '/api/latest':
+        header('Content-Type: application/json');
+        header('Access-Control-Allow-Origin: *');
+
+        $limit = min(10, max(1, (int)($_GET['limit'] ?? 5)));
+
+        $stmt = $pdo->prepare("
+            SELECT 
+                a.id, a.title, a.slug, a.excerpt, a.featured_image,
+                a.published_at, a.created_at,
+                c.name AS category_name, c.color AS category_color
+            FROM articles a
+            LEFT JOIN categories c ON a.category_id = c.id
+            WHERE a.status = 'published'
+            ORDER BY a.published_at DESC, a.created_at DESC
+            LIMIT :limit
+        ");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($articles as &$article) {
+            $article['time_ago'] = timeAgo($article['published_at'] ?: $article['created_at']);
+            $article['url'] = "/articulo/" . $article['slug'];
+
+            if (!$article['featured_image']) {
+                $article['featured_image'] = "https://via.placeholder.com/80x80/" .
+                    substr(md5($article['category_name'] ?: 'general'), 0, 6) . "/ffffff?text=" .
+                    substr($article['title'], 0, 1);
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'data' => $articles
+        ]);
+        break;
+
+    case '/api/stats':
+        header('Content-Type: application/json');
+        header('Access-Control-Allow-Origin: *');
+
+        $stats = [
+            'total_articles' => (int)$pdo->query("SELECT COUNT(*) FROM articles WHERE status = 'published'")->fetchColumn(),
+            'total_categories' => (int)$pdo->query("SELECT COUNT(*) FROM categories WHERE status = 'active'")->fetchColumn(),
+            'total_views' => (int)$pdo->query("SELECT SUM(views) FROM articles WHERE status = 'published'")->fetchColumn(),
+            'articles_today' => (int)$pdo->query("SELECT COUNT(*) FROM articles WHERE status = 'published' AND DATE(published_at) = CURDATE()")->fetchColumn()
+        ];
+
+        echo json_encode([
+            'success' => true,
+            'data' => $stats
+        ]);
+        break;
 
     default:
         // /articles/edit/{id}
@@ -712,6 +905,18 @@ switch ($path) {
             $_SESSION['success'] = 'Estado de categoría actualizado';
             header('Location: ' . BASE_URL . '/categories');
             exit;
+        }
+        // Función helper para "tiempo transcurrido"
+        function timeAgo($datetime)
+        {
+            $time = time() - strtotime($datetime);
+
+            if ($time < 60) return 'Hace unos segundos';
+            if ($time < 3600) return 'Hace ' . floor($time / 60) . ' minutos';
+            if ($time < 86400) return 'Hace ' . floor($time / 3600) . ' horas';
+            if ($time < 2592000) return 'Hace ' . floor($time / 86400) . ' días';
+            if ($time < 31536000) return 'Hace ' . floor($time / 2592000) . ' meses';
+            return 'Hace ' . floor($time / 31536000) . ' años';
         }
 
         // 404
