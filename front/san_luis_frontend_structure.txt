@@ -1,0 +1,32 @@
+san-luis-frontend/
+├── public/
+│   ├── index.php              # Router principal
+│   ├── assets/
+│   │   ├── css/
+│   │   │   └── style.css      # Estilos del portal
+│   │   ├── js/
+│   │   │   ├── app.js         # JavaScript principal
+│   │   │   └── components.js   # Componentes reutilizables
+│   │   └── images/
+│   └── .htaccess
+├── includes/
+│   ├── config.php             # Configuración y conexión API
+│   ├── functions.php          # Funciones helper
+│   └── pagination.php         # Lógica de paginación
+├── templates/
+│   ├── layout/
+│   │   ├── header.php         # Header común
+│   │   ├── footer.php         # Footer común
+│   │   └── sidebar.php        # Sidebar con noticias recientes
+│   ├── components/
+│   │   ├── article-card.php   # Tarjeta de artículo
+│   │   ├── featured-news.php  # Noticia destacada
+│   │   ├── category-filter.php # Filtros de categoría
+│   │   └── search-form.php    # Formulario de búsqueda
+│   └── pages/
+│       ├── home.php           # Página principal
+│       ├── category.php       # Vista por categoría
+│       ├── article.php        # Vista individual de artículo
+│       └── search.php         # Resultados de búsqueda
+└── api/
+    └── client.php             # Cliente para consumir tu backend
