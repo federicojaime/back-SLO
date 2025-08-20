@@ -4,8 +4,91 @@ window.SLO = {
     csrfToken: null
 };
 
-// Inicializar Quill editor
+// Función para generar slugs
+function generateSlug(text) {
+    return text
+        .toLowerCase()
+        .replace(/[áàäâ]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöô]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    
+    // ==========================================
+    // MENÚ MÓVIL RESPONSIVE
+    // ==========================================
+    
+    // Crear botón de menú móvil
+    const mobileToggle = document.createElement('button');
+    mobileToggle.className = 'mobile-menu-toggle';
+    mobileToggle.innerHTML = '<i class="fas fa-bars"></i>';
+    mobileToggle.setAttribute('aria-label', 'Abrir menú');
+    document.body.appendChild(mobileToggle);
+    
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+    
+    // Función para abrir/cerrar menú
+    function toggleMenu() {
+        const isOpen = sidebar.classList.contains('show');
+        
+        if (isOpen) {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+            mobileToggle.innerHTML = '<i class="fas fa-bars"></i>';
+            document.body.style.overflow = '';
+        } else {
+            sidebar.classList.add('show');
+            overlay.classList.add('show');
+            mobileToggle.innerHTML = '<i class="fas fa-times"></i>';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    
+    // Event listeners para el menú
+    mobileToggle.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', toggleMenu);
+    
+    // Cerrar menú al hacer click en un enlace
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 1023) {
+                toggleMenu();
+            }
+        });
+    });
+    
+    // Cerrar menú con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('show')) {
+            toggleMenu();
+        }
+    });
+    
+    // Manejar resize de ventana
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 1023) {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+            document.body.style.overflow = '';
+            mobileToggle.innerHTML = '<i class="fas fa-bars"></i>';
+        }
+    });
+    
+    // ==========================================
+    // INICIALIZAR QUILL EDITOR
+    // ==========================================
+    
     if (document.getElementById('editor')) {
         const quill = new Quill('#editor', {
             theme: 'snow',
@@ -72,7 +155,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Auto-hide alerts
+    // ==========================================
+    // AUTO-GENERAR SLUG DESDE TÍTULO
+    // ==========================================
+    
+    const titleInput = document.getElementById('title');
+    if (titleInput) {
+        // Crear preview del slug
+        const preview = document.createElement('div');
+        preview.className = 'mt-2 p-2 bg-light border rounded';
+        preview.innerHTML = '<small class="text-muted"><strong>URL:</strong> <span class="text-primary">/articulo/<span id="slug-text">nuevo-articulo</span></span></small>';
+        titleInput.parentNode.appendChild(preview);
+        
+        titleInput.addEventListener('input', function() {
+            const slug = generateSlug(this.value) || 'nuevo-articulo';
+            document.getElementById('slug-text').textContent = slug;
+        });
+    }
+    
+    // ==========================================
+    // AUTO-HIDE ALERTS
+    // ==========================================
+    
     setTimeout(function() {
         const alerts = document.querySelectorAll('.alert');
         alerts.forEach(function(alert) {
@@ -84,7 +188,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, 3000);
     
-    // Confirmación para eliminaciones
+    // ==========================================
+    // CONFIRMACIÓN PARA ELIMINACIONES
+    // ==========================================
+    
     document.querySelectorAll('.btn-delete').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             if (!confirm('¿Estás seguro de que quieres eliminar este elemento?')) {
@@ -93,7 +200,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Previsualización de imágenes
+    // ==========================================
+    // PREVISUALIZACIÓN DE IMÁGENES
+    // ==========================================
+    
     document.querySelectorAll('input[type="file"]').forEach(function(input) {
         input.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -111,14 +221,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Funciones utilitarias
-function generateSlug(text) {
-    return text
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/[\s_-]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-}
+// ==========================================
+// FUNCIONES UTILITARIAS
+// ==========================================
 
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -130,21 +235,3 @@ function formatDate(dateString) {
         minute: '2-digit'
     });
 }
-
-// Auto-generar slug desde título
-document.addEventListener('DOMContentLoaded', function() {
-    const titleInput = document.getElementById('title');
-    const slugInput = document.getElementById('slug');
-    
-    if (titleInput && slugInput) {
-        titleInput.addEventListener('input', function() {
-            if (!slugInput.dataset.manual) {
-                slugInput.value = generateSlug(this.value);
-            }
-        });
-        
-        slugInput.addEventListener('input', function() {
-            this.dataset.manual = 'true';
-        });
-    }
-});

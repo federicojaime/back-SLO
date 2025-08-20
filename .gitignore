@@ -1,0 +1,126 @@
+# ==========================================
+# SAN LUIS OPINA - .gitignore
+# ==========================================
+
+# Archivos subidos por usuarios
+public/uploads/
+uploads/
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Logs
+*.log
+logs/
+error.log
+access.log
+
+# Cache y archivos temporales
+cache/
+tmp/
+temp/
+*.tmp
+*.cache
+
+# Configuración local y credenciales
+config.local.php
+.env
+.env.local
+.env.production
+database.php
+db_config.php
+
+# Archivos del sistema
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-workspace
+.sublime-project
+
+# Dependencias de Node.js (si usas)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Composer (si usas)
+vendor/
+composer.lock
+
+# Backups de base de datos
+*.sql
+*.sql.gz
+*.dump
+backup/
+backups/
+
+# Archivos de sesión PHP
+sessions/
+*.sess
+
+# Archivos de instalación
+install.php
+setup.php
+installer/
+
+# Documentación generada
+docs/api/
+documentation/
+
+# Archivos de prueba
+test_uploads/
+phpunit.xml
+.phpunit.result.cache
+
+# Certificados SSL
+*.pem
+*.key
+*.crt
+*.cert
+
+# Archivos de configuración del servidor
+.htaccess.backup
+nginx.conf
+apache.conf
+
+# Variables de entorno específicas
+*.local
+local.*
+
+# Archivos de debug
+debug.log
+var_dump.txt
+xdebug.log
+
+# Archivos de monitoreo
+error_reporting.txt
+performance.log
+
+# Minificados y compilados
+*.min.js
+*.min.css
+dist/
+build/
+
+# Archivos de respaldo del editor
+*~
+*.orig
+*.rej
+
+# Archivos específicos del proyecto
+config/database.php
+config/mail.php
+.env.example.backup

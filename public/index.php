@@ -1,6 +1,11 @@
 ﻿<?php
 session_start();
 
+// ========================================
+// CONFIGURACIÓN DE ZONA HORARIA
+// ========================================
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+
 /*========================
 =   Configuración DB     =
 ========================*/
@@ -17,7 +22,10 @@ try {
         "mysql:host={$db_config['host']};dbname={$db_config['dbname']};charset={$db_config['charset']}",
         $db_config['user'],
         $db_config['pass'],
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '-03:00'"
+        ]
     );
 } catch (PDOException $e) {
     die('Error de conexión: ' . $e->getMessage());
@@ -28,6 +36,57 @@ try {
 ========================*/
 define('BASE_URL', '/back-SLO/public');
 define('TEMPLATE_PATH', __DIR__ . '/../templates/');
+
+/*========================
+=   Funciones helper     =
+========================*/
+function generateUniqueSlug($pdo, $title, $articleId = null)
+{
+    $baseSlug = strtolower(trim($title));
+    $baseSlug = preg_replace('/[áàäâ]/u', 'a', $baseSlug);
+    $baseSlug = preg_replace('/[éèëê]/u', 'e', $baseSlug);
+    $baseSlug = preg_replace('/[íìïî]/u', 'i', $baseSlug);
+    $baseSlug = preg_replace('/[óòöô]/u', 'o', $baseSlug);
+    $baseSlug = preg_replace('/[úùüû]/u', 'u', $baseSlug);
+    $baseSlug = preg_replace('/[ñ]/u', 'n', $baseSlug);
+    $baseSlug = preg_replace('/[^a-z0-9\s-]/u', '', $baseSlug);
+    $baseSlug = preg_replace('/[\s-]+/', '-', $baseSlug);
+    $baseSlug = trim($baseSlug, '-');
+
+    if (empty($baseSlug)) {
+        $baseSlug = 'articulo-' . date('Y-m-d');
+    }
+
+    $slug = $baseSlug;
+    $counter = 1;
+
+    while (true) {
+        $sql = "SELECT id FROM articles WHERE slug = ?";
+        $params = [$slug];
+
+        if ($articleId) {
+            $sql .= " AND id != ?";
+            $params[] = $articleId;
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        if (!$stmt->fetch()) {
+            break;
+        }
+
+        $slug = $baseSlug . '-' . $counter;
+        $counter++;
+
+        if ($counter > 1000) {
+            $slug = $baseSlug . '-' . uniqid();
+            break;
+        }
+    }
+
+    return $slug;
+}
 
 /*========================
 =   Router básico        =
@@ -58,7 +117,6 @@ function includeTemplate(string $templateRelPath, array $vars = []): void
         die("Template not found: $fullPath");
     }
     if (!empty($vars)) {
-        // Expone $vars como variables locales en el template (ej: ['stats'=>…] -> $stats)
         extract($vars, EXTR_SKIP);
     }
     include $fullPath;
@@ -89,6 +147,9 @@ switch ($path) {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user && password_verify($password, $user['password'])) {
+                $stmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+                $stmt->execute([$user['id']]);
+
                 $_SESSION['user_id']   = $user['id'];
                 $_SESSION['username']  = $user['username'];
                 $_SESSION['role']      = $user['role'];
@@ -110,7 +171,6 @@ switch ($path) {
     case '/dashboard':
         requireAuth();
 
-        // Valores por defecto para evitar warnings si la DB está vacía
         $stats = [
             'articles'   => 0,
             'published'  => 0,
@@ -190,27 +250,32 @@ switch ($path) {
             $category_id = $_POST['category_id'] ?: null;
             $status      = $_POST['status']      ?? 'draft';
 
-            $slug         = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($title)));
+            $slug = generateUniqueSlug($pdo, $title);
             $published_at = ($status === 'published') ? date('Y-m-d H:i:s') : null;
 
-            $stmt = $pdo->prepare("
-                INSERT INTO articles (title, slug, content, excerpt, category_id, author_id, status, published_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([
-                $title,
-                $slug,
-                $content,
-                $excerpt,
-                $category_id,
-                $_SESSION['user_id'],
-                $status,
-                $published_at
-            ]);
+            try {
+                $stmt = $pdo->prepare("
+                    INSERT INTO articles (title, slug, content, excerpt, category_id, author_id, status, published_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([
+                    $title,
+                    $slug,
+                    $content,
+                    $excerpt,
+                    $category_id,
+                    $_SESSION['user_id'],
+                    $status,
+                    $published_at
+                ]);
 
-            $_SESSION['success'] = 'Artículo creado exitosamente';
-            header('Location: ' . BASE_URL . '/articles');
-            exit;
+                $_SESSION['success'] = 'Artículo creado exitosamente';
+                header('Location: ' . BASE_URL . '/articles');
+                exit;
+            } catch (PDOException $e) {
+                error_log('Error al crear artículo: ' . $e->getMessage());
+                $_SESSION['error'] = 'Error al crear el artículo. Por favor intenta nuevamente.';
+            }
         }
 
         $categories = $pdo->query("SELECT * FROM categories WHERE status = 'active' ORDER BY name")
@@ -228,14 +293,19 @@ switch ($path) {
             $name        = $_POST['name']        ?? '';
             $description = $_POST['description'] ?? '';
             $color       = $_POST['color']       ?? '#6c757d';
-            $slug        = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($name)));
+            $slug        = generateUniqueSlug($pdo, $name);
 
-            $stmt = $pdo->prepare("INSERT INTO categories (name, slug, description, color) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$name, $slug, $description, $color]);
+            try {
+                $stmt = $pdo->prepare("INSERT INTO categories (name, slug, description, color) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$name, $slug, $description, $color]);
 
-            $_SESSION['success'] = 'Categoría creada exitosamente';
-            header('Location: ' . BASE_URL . '/categories');
-            exit;
+                $_SESSION['success'] = 'Categoría creada exitosamente';
+                header('Location: ' . BASE_URL . '/categories');
+                exit;
+            } catch (PDOException $e) {
+                error_log('Error al crear categoría: ' . $e->getMessage());
+                $_SESSION['error'] = 'Error al crear la categoría. Por favor intenta nuevamente.';
+            }
         }
 
         $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
@@ -261,101 +331,33 @@ switch ($path) {
             $password  = password_hash($_POST['password'] ?? '', PASSWORD_DEFAULT);
             $role      = $_POST['role']      ?? 'editor';
 
-            $stmt = $pdo->prepare("
-            INSERT INTO users (username, email, full_name, password, role)
-            VALUES (?, ?, ?, ?, ?)
-        ");
-            $stmt->execute([$username, $email, $full_name, $password, $role]);
+            try {
+                $stmt = $pdo->prepare("
+                    INSERT INTO users (username, email, full_name, password, role)
+                    VALUES (?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([$username, $email, $full_name, $password, $role]);
 
-            $_SESSION['success'] = 'Usuario creado exitosamente';
-            header('Location: ' . BASE_URL . '/users');
-            exit;
+                $_SESSION['success'] = 'Usuario creado exitosamente';
+                header('Location: ' . BASE_URL . '/users');
+                exit;
+            } catch (PDOException $e) {
+                error_log('Error al crear usuario: ' . $e->getMessage());
+                $_SESSION['error'] = 'Error al crear el usuario. Puede que el email o nombre de usuario ya existan.';
+            }
         }
 
-        // ⬇️ Traemos last_login y, de yapa, el conteo de artículos por usuario
         $users = $pdo->query("
-        SELECT 
-            u.id, u.username, u.email, u.full_name, u.role, u.status, 
-            u.created_at, u.last_login,
-            (SELECT COUNT(*) FROM articles a WHERE a.author_id = u.id) AS article_count
-        FROM users u
-        ORDER BY u.created_at DESC
-    ")->fetchAll(PDO::FETCH_ASSOC);
+            SELECT 
+                u.id, u.username, u.email, u.full_name, u.role, u.status, 
+                u.created_at, u.last_login,
+                (SELECT COUNT(*) FROM articles a WHERE a.author_id = u.id) AS article_count
+            FROM users u
+            ORDER BY u.created_at DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
 
         includeTemplate('users/index.php', [
             'users' => $users,
-        ]);
-        break;
-
-
-    case '/settings':
-        requireAuth();
-
-        if (($_SESSION['role'] ?? '') !== 'admin') {
-            $_SESSION['error'] = 'No tienes permisos para acceder a esta sección';
-            header('Location: ' . BASE_URL . '/dashboard');
-            exit;
-        }
-
-        if ($method === 'POST') {
-            foreach ($_POST as $key => $value) {
-                if (strpos($key, 'config_') === 0) {
-                    $config_key = str_replace('config_', '', $key);
-                    $stmt = $pdo->prepare("
-                        INSERT INTO site_config (config_key, config_value)
-                        VALUES (?, ?)
-                        ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)
-                    ");
-                    $stmt->execute([$config_key, $value]);
-                }
-            }
-            $_SESSION['success'] = 'Configuración actualizada';
-            header('Location: ' . BASE_URL . '/settings');
-            exit;
-        }
-
-        $settings = $pdo->query("SELECT * FROM site_config ORDER BY config_key")->fetchAll(PDO::FETCH_ASSOC);
-
-        includeTemplate('settings/index.php', [
-            'settings' => $settings,
-        ]);
-        break;
-
-    case '/profile':
-        requireAuth();
-
-        if ($method === 'POST') {
-            $full_name = $_POST['full_name'] ?? '';
-            $email     = $_POST['email']     ?? '';
-            $bio       = $_POST['bio']       ?? '';
-
-            $query  = "UPDATE users SET full_name = ?, email = ?, bio = ?";
-            $params = [$full_name, $email, $bio];
-
-            if (!empty($_POST['password'])) {
-                $query   .= ", password = ?";
-                $params[] = password_hash($_POST['password'], PASSWORD_DEFAULT);
-            }
-
-            $query   .= " WHERE id = ?";
-            $params[] = $_SESSION['user_id'];
-
-            $stmt = $pdo->prepare($query);
-            $stmt->execute($params);
-
-            $_SESSION['full_name'] = $full_name;
-
-            $_SESSION['success'] = 'Perfil actualizado exitosamente';
-            header('Location: ' . BASE_URL . '/profile');
-            exit;
-        }
-
-        $userStmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-        $userStmt->execute([$_SESSION['user_id']]);
-        $user_data = $userStmt->fetch(PDO::FETCH_ASSOC);
-
-        includeTemplate('profile/index.php', [
-            'user_data' => $user_data,
         ]);
         break;
 
@@ -387,11 +389,30 @@ switch ($path) {
         }
         break;
 
-    default:
-        /*===============================
-        =   Rutas dinámicas / 404       =
-        ===============================*/
+    case '/api/check-slug':
+        requireAuth();
+        if ($method === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $slug = $input['slug'] ?? '';
+            $articleId = $input['articleId'] ?? null;
 
+            $sql = "SELECT id FROM articles WHERE slug = ?";
+            $params = [$slug];
+
+            if ($articleId) {
+                $sql .= " AND id != ?";
+                $params[] = $articleId;
+            }
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $exists = $stmt->fetch() ? true : false;
+
+            echo json_encode(['available' => !$exists]);
+        }
+        break;
+
+    default:
         // /articles/edit/{id}
         if (preg_match('#^/articles/edit/(\d+)$#', $path, $m)) {
             requireAuth();
@@ -404,29 +425,34 @@ switch ($path) {
                 $category_id = $_POST['category_id'] ?: null;
                 $status      = $_POST['status']      ?? 'draft';
 
-                $slug         = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($title)));
+                $slug = generateUniqueSlug($pdo, $title, $article_id);
                 $published_at = ($status === 'published') ? date('Y-m-d H:i:s') : null;
 
-                $stmt = $pdo->prepare("
-                    UPDATE articles SET 
-                        title = ?, slug = ?, content = ?, excerpt = ?, 
-                        category_id = ?, status = ?, published_at = ?, updated_at = NOW()
-                    WHERE id = ?
-                ");
-                $stmt->execute([
-                    $title,
-                    $slug,
-                    $content,
-                    $excerpt,
-                    $category_id,
-                    $status,
-                    $published_at,
-                    $article_id
-                ]);
+                try {
+                    $stmt = $pdo->prepare("
+                        UPDATE articles SET 
+                            title = ?, slug = ?, content = ?, excerpt = ?, 
+                            category_id = ?, status = ?, published_at = ?, updated_at = NOW()
+                        WHERE id = ?
+                    ");
+                    $stmt->execute([
+                        $title,
+                        $slug,
+                        $content,
+                        $excerpt,
+                        $category_id,
+                        $status,
+                        $published_at,
+                        $article_id
+                    ]);
 
-                $_SESSION['success'] = 'Artículo actualizado exitosamente';
-                header('Location: ' . BASE_URL . '/articles');
-                exit;
+                    $_SESSION['success'] = 'Artículo actualizado exitosamente';
+                    header('Location: ' . BASE_URL . '/articles');
+                    exit;
+                } catch (PDOException $e) {
+                    error_log('Error al actualizar artículo: ' . $e->getMessage());
+                    $_SESSION['error'] = 'Error al actualizar el artículo. Por favor intenta nuevamente.';
+                }
             }
 
             $stmt = $pdo->prepare("SELECT * FROM articles WHERE id = ?");
@@ -498,6 +524,103 @@ switch ($path) {
             exit;
         }
 
+        // ==========================================
+        // NUEVAS RUTAS PARA CAMBIAR ESTADOS
+        // ==========================================
+
+        // /articles/publish/{id} - Cambiar a publicado
+        if (preg_match('#^/articles/publish/(\d+)$#', $path, $m)) {
+            requireAuth();
+            $article_id = (int)$m[1];
+
+            try {
+                $stmt = $pdo->prepare("
+                    UPDATE articles 
+                    SET status = 'published', published_at = NOW(), updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $stmt->execute([$article_id]);
+
+                $_SESSION['success'] = 'Artículo publicado exitosamente';
+            } catch (PDOException $e) {
+                $_SESSION['error'] = 'Error al publicar el artículo';
+            }
+
+            header('Location: ' . BASE_URL . '/articles');
+            exit;
+        }
+
+        // /articles/draft/{id} - Cambiar a borrador
+        if (preg_match('#^/articles/draft/(\d+)$#', $path, $m)) {
+            requireAuth();
+            $article_id = (int)$m[1];
+
+            try {
+                $stmt = $pdo->prepare("
+                    UPDATE articles 
+                    SET status = 'draft', published_at = NULL, updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $stmt->execute([$article_id]);
+
+                $_SESSION['success'] = 'Artículo movido a borrador exitosamente';
+            } catch (PDOException $e) {
+                $_SESSION['error'] = 'Error al mover el artículo a borrador';
+            }
+
+            header('Location: ' . BASE_URL . '/articles');
+            exit;
+        }
+
+        // /articles/archive/{id} - Cambiar a archivado
+        if (preg_match('#^/articles/archive/(\d+)$#', $path, $m)) {
+            requireAuth();
+            $article_id = (int)$m[1];
+
+            try {
+                $stmt = $pdo->prepare("
+                    UPDATE articles 
+                    SET status = 'archived', updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $stmt->execute([$article_id]);
+
+                $_SESSION['success'] = 'Artículo archivado exitosamente';
+            } catch (PDOException $e) {
+                $_SESSION['error'] = 'Error al archivar el artículo';
+            }
+
+            header('Location: ' . BASE_URL . '/articles');
+            exit;
+        }
+
+        // /articles/feature/{id} - Destacar/quitar destacado
+        if (preg_match('#^/articles/feature/(\d+)$#', $path, $m)) {
+            requireAuth();
+            $article_id = (int)$m[1];
+
+            try {
+                $stmt = $pdo->prepare("
+                    UPDATE articles 
+                    SET featured = NOT featured, updated_at = NOW()
+                    WHERE id = ?
+                ");
+                $stmt->execute([$article_id]);
+
+                // Verificar el nuevo estado
+                $stmt = $pdo->prepare("SELECT featured FROM articles WHERE id = ?");
+                $stmt->execute([$article_id]);
+                $featured = $stmt->fetchColumn();
+
+                $_SESSION['success'] = $featured ? 'Artículo destacado' : 'Artículo quitado de destacados';
+            } catch (PDOException $e) {
+                $_SESSION['error'] = 'Error al cambiar el estado de destacado';
+            }
+
+            header('Location: ' . BASE_URL . '/articles');
+            exit;
+        }
+
         // /categories/edit/{id}
         if (preg_match('#^/categories/edit/(\d+)$#', $path, $m)) {
             requireAuth();
@@ -508,18 +631,23 @@ switch ($path) {
                 $description = $_POST['description'] ?? '';
                 $status      = $_POST['status']      ?? 'active';
                 $color       = $_POST['color']       ?? '#6c757d';
-                $slug        = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($name)));
+                $slug        = generateUniqueSlug($pdo, $name);
 
-                $stmt = $pdo->prepare("
-                    UPDATE categories SET 
-                        name = ?, slug = ?, description = ?, status = ?, color = ?, updated_at = NOW()
-                    WHERE id = ?
-                ");
-                $stmt->execute([$name, $slug, $description, $status, $color, $category_id]);
+                try {
+                    $stmt = $pdo->prepare("
+                        UPDATE categories SET 
+                            name = ?, slug = ?, description = ?, status = ?, color = ?, updated_at = NOW()
+                        WHERE id = ?
+                    ");
+                    $stmt->execute([$name, $slug, $description, $status, $color, $category_id]);
 
-                $_SESSION['success'] = 'Categoría actualizada exitosamente';
-                header('Location: ' . BASE_URL . '/categories');
-                exit;
+                    $_SESSION['success'] = 'Categoría actualizada exitosamente';
+                    header('Location: ' . BASE_URL . '/categories');
+                    exit;
+                } catch (PDOException $e) {
+                    error_log('Error al actualizar categoría: ' . $e->getMessage());
+                    $_SESSION['error'] = 'Error al actualizar la categoría. Por favor intenta nuevamente.';
+                }
             }
 
             $stmt = $pdo->prepare("SELECT * FROM categories WHERE id = ?");
@@ -548,7 +676,6 @@ switch ($path) {
             $category = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($category) {
-                // Verificar si hay artículos usando esta categoría
                 $articles_count = $pdo->prepare("SELECT COUNT(*) FROM articles WHERE category_id = ?");
                 $articles_count->execute([$category_id]);
                 $count = $articles_count->fetchColumn();
