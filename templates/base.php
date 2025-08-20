@@ -56,35 +56,39 @@
                                     <span>Categorías</span>
                                 </a>
                             </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <span class="nav-section-title">MARKETING</span>
+                        <ul class="nav-items">
                             <li class="nav-item">
-                                <a href="/back-SLO/public/users" class="nav-link">
+                                <a href="/back-SLO/public/sponsors" class="nav-link <?= (strpos($_SERVER['REQUEST_URI'], '/sponsors') !== false) ? 'active' : '' ?>">
+                                    <i class="fas fa-handshake"></i>
+                                    <span>Sponsors</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/back-SLO/public/promotional-modals" class="nav-link <?= (strpos($_SERVER['REQUEST_URI'], '/promotional-modals') !== false) ? 'active' : '' ?>">
+                                    <i class="fas fa-window-restore"></i>
+                                    <span>Modales Promocionales</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="nav-section">
+                        <span class="nav-section-title">ADMINISTRACIÓN</span>
+                        <ul class="nav-items">
+                            <li class="nav-item">
+                                <a href="/back-SLO/public/users" class="nav-link <?= (strpos($_SERVER['REQUEST_URI'], '/users') !== false) ? 'active' : '' ?>">
                                     <i class="fas fa-users"></i>
                                     <span>Usuarios</span>
                                 </a>
                             </li>
                         </ul>
                     </div>
-                    | <!--
-                    <div class="nav-section">
-                        <span class="nav-section-title">CONFIGURACIÓN</span>
-                        <ul class="nav-items">
-                            <li class="nav-item">
-                                <a href="/back-SLO/public/settings" class="nav-link">
-                                    <i class="fas fa-cog"></i>
-                                    <span>Configuración</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="/back-SLO/public/profile" class="nav-link">
-                                    <i class="fas fa-user"></i>
-                                    <span>Mi Perfil</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>-->
                 </div>
-
-
 
                 <div class="sidebar-footer">
                     <div class="user-info">
@@ -116,6 +120,8 @@
                                 if (strpos($_SERVER['REQUEST_URI'], '/articles') !== false) echo 'Gestión de contenido';
                                 elseif (strpos($_SERVER['REQUEST_URI'], '/categories') !== false) echo 'Organización del sitio';
                                 elseif (strpos($_SERVER['REQUEST_URI'], '/users') !== false) echo 'Administración de usuarios';
+                                elseif (strpos($_SERVER['REQUEST_URI'], '/sponsors') !== false) echo 'Gestión de patrocinadores';
+                                elseif (strpos($_SERVER['REQUEST_URI'], '/promotional-modals') !== false) echo 'Modales promocionales';
                                 elseif (strpos($_SERVER['REQUEST_URI'], '/settings') !== false) echo 'Configuración del sistema';
                                 elseif (strpos($_SERVER['REQUEST_URI'], '/profile') !== false) echo 'Tu información personal';
                                 else echo 'Panel de control del portal';
