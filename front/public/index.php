@@ -1,5 +1,8 @@
 <?php
-// public/index.php - Router Principal del Frontend
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+ // public/index.php - Router Principal del Frontend
 session_start();
 
 // Configuración

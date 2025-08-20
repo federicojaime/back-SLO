@@ -5,8 +5,9 @@
 // CONFIGURACIÓN PRINCIPAL
 // ==========================================
 
-define('SITE_URL', 'https://sanluisopina.com');
-define('SITE_BASE_PATH', '/');
+//define('SITE_URL', 'https://sanluisopina.com');
+define('SITE_URL', 'http://localhost/back-SLO/');
+define('SITE_BASE_PATH', '/back-SLO/front/public/');
 define('API_BASE_URL', 'http://localhost/back-SLO/public/api');
 
 // ==========================================
@@ -31,6 +32,7 @@ define('CACHE_DURATION', 300); // 5 minutos
 define('SITE_NAME', 'San Luis Opina');
 define('SITE_DESCRIPTION', 'Portal de noticias líder de San Luis, Argentina');
 define('SITE_KEYWORDS', 'San Luis, noticias, Argentina, portal, radio FM 97.1');
+
 
 // ==========================================
 // CONFIGURACIÓN DE REDES SOCIALES
@@ -128,56 +130,62 @@ $GLOBALS['main_categories'] = [
 // FUNCIONES DE UTILIDAD
 // ==========================================
 
-function get_env($key, $default = null) {
+function get_env($key, $default = null)
+{
     return $_ENV[$key] ?? $default;
 }
 
-function is_production() {
+function is_production()
+{
     return get_env('ENVIRONMENT') === 'production';
 }
 
-function get_cache_key($key) {
+function get_cache_key($key)
+{
     return 'slo_' . md5($key);
 }
 
-function set_cache($key, $data, $duration = null) {
+function set_cache($key, $data, $duration = null)
+{
     if (!CACHE_ENABLED) return false;
-    
+
     $duration = $duration ?: CACHE_DURATION;
     $cache_key = get_cache_key($key);
     $cache_data = [
         'data' => $data,
         'expires' => time() + $duration
     ];
-    
+
     return file_put_contents(
         sys_get_temp_dir() . '/' . $cache_key,
         serialize($cache_data)
     );
 }
 
-function get_cache($key) {
+function get_cache($key)
+{
     if (!CACHE_ENABLED) return false;
-    
+
     $cache_key = get_cache_key($key);
     $cache_file = sys_get_temp_dir() . '/' . $cache_key;
-    
+
     if (!file_exists($cache_file)) return false;
-    
+
     $cache_data = unserialize(file_get_contents($cache_file));
-    
+
     if (time() > $cache_data['expires']) {
         unlink($cache_file);
         return false;
     }
-    
+
     return $cache_data['data'];
 }
 
-function clear_cache() {
+function clear_cache()
+{
     $temp_dir = sys_get_temp_dir();
     $cache_files = glob($temp_dir . '/slo_*');
-    
+
     foreach ($cache_files as $file) {
         if (is_file($file)) {
             unlink($file);
@@ -190,13 +198,15 @@ function clear_cache() {
 // ==========================================
 
 // Detectar si estamos en desarrollo
-if (strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || 
-    strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false) {
+if (
+    strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false ||
+    strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false
+) {
     define('ENVIRONMENT', 'development');
-    
+
     // URLs para desarrollo
     if (!defined('SITE_URL')) {
-        define('SITE_URL', 'http://localhost/san-luis-frontend/public');
+        define('SITE_URL', 'http://localhost/back-SLO/front/public');
     }
     if (!defined('API_BASE_URL')) {
         define('API_BASE_URL', 'http://localhost/back-SLO/public/api');
