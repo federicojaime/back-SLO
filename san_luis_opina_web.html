@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>San Luis Opina - Portal de Noticias</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+            margin: 0 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 0;
+        }
+
+        .nav-content {
+            display: flex;
+            gap: 2rem;
+            overflow-x: auto;
+            padding: 0.5rem 0;
+        }
+
+        .nav-item {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Main Content */
+        main {
+            padding: 2rem 0;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        /* Featured Article */
+        .featured-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .featured-article {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .featured-article:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .featured-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .featured-content {
+            padding: 2rem;
+        }
+
+        .featured-title {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+
+        .featured-excerpt {
+            color: #666;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .article-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .category-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            background: #667eea;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* Articles Grid */
+        .articles-section {
+            margin-bottom: 3rem;
+        }
+
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .article-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .article-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        .article-content {
+            padding: 1.5rem;
+        }
+
+        .article-title {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .article-excerpt {
+            color: #666;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .widget {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .widget-title {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .sponsors-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .sponsor-item {
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .sponsor-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: scale(1.05);
+        }
+
+        .newsletter-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .newsletter-input {
+            padding: 0.75rem;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .newsletter-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        .newsletter-btn {
+            padding: 0.75rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .newsletter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .page-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn:hover,
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Loading and Messages */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .error-message {
+            background: rgba(255, 82, 82, 0.1);
+            color: #ff5252;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .success-message {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .search-container {
+                margin: 0;
+                max-width: 100%;
+            }
+
+            .nav-content {
+                justify-content: center;
+            }
+
+            .articles-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sponsors-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Scroll animations */
+        .article-card,
+        .widget {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .article-card.visible,
+        .widget.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-newspaper"></i> San Luis Opina
+                </div>
+                
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input" 
+                           placeholder="Buscar noticias...">
+                </div>
+                
+                <div class="stats" id="siteStats">
+                    <div><i class="fas fa-newspaper"></i> <span id="totalArticles">0</span> Artículos</div>
+                    <div><i class="fas fa-eye"></i> <span id="totalViews">0</span> Vistas</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="nav-content" id="categoriesNav">
+                <a href="#" class="nav-item active" data-category="all">
+                    <i class="fas fa-home"></i> Todas
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+            <!-- Featured Article Section -->
+            <section class="featured-section">
+                <h2 class="section-title">
+                    <i class="fas fa-star"></i> Artículo Destacado
+                </h2>
+                <div id="featuredArticle" class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Cargando artículo destacado...
+                </div>
+            </section>
+
+            <div class="content-grid">
+                <!-- Articles Section -->
+                <section class="articles-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-newspaper"></i> Últimas Noticias
+                    </h2>
+                    <div id="articlesGrid" class="articles-grid loading">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando noticias...
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div id="pagination" class="pagination" style="display: none;"></div>
+                </section>
+
+                <!-- Sidebar -->
+                <aside class="sidebar">
+                    <!-- Newsletter Widget -->
+                    <div class="widget">
+                        <h3 class="widget-title">
+                            <i class="fas fa-envelope"></i> Newsletter
+                        </h3>
+                        <p style="margin-bottom: 1rem; text-align: center; color: #666;">
+                            Mantente informado con las últimas noticias
+                        </p>
+                        <form class="newsletter-form" id="newsletterForm">
+                            <input type="email" class="newsletter-input" 
+                                   placeholder="Tu email" required>
+                            <input type="text" class="newsletter-input" 
+                                   placeholder="Tu nombre (opcional)">
+                            <button type="submit" class="newsletter-btn">
+                                <i class="fas fa-paper-plane"></i> Suscribirse
+                            </button>
+                        </form>
+                        <div id="newsletterMessage"></div>
+                    </div>
+
+                    <!-- Sponsors Widget -->
+                    <div class="widget">
+                        <h3 class="widget-title">
+                            <i class="fas fa-handshake"></i> Nuestros Sponsors
+                        </h3>
+                        <div id="sponsorsGrid" class="sponsors-grid">
+                            <div class="loading">Cargando sponsors...</div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Widget -->
+                    <div class="widget">
+                        <h3 class="widget-title">
+                            <i class="fas fa-chart-bar"></i> Estadísticas
+                        </h3>
+                        <div id="detailedStats">
+                            <div class="loading">Cargando estadísticas...</div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <!-- Article Modal -->
+    <div id="articleModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="modalContent">
+                <div class="loading">Cargando artículo...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'http://localhost/back-SLO/public/api';
+        
+        // State Management
+        let currentPage = 1;
+        let currentCategory = 'all';
+        let currentSearch = '';
+        let isLoading = false;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        async function initializeApp() {
+            try {
+                await Promise.all([
+                    loadSiteStats(),
+                    loadCategories(),
+                    loadFeaturedArticle(),
+                    loadArticles(),
+                    loadSponsors()
+                ]);
+                
+                setupEventListeners();
+                initScrollAnimations();
+                checkForPromotionalModal();
+                
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showError('Error al cargar la aplicación');
+            }
+        }
+
+        // API Calls
+        async function apiCall(endpoint, params = {}) {
+            const url = new URL(`${API_BASE}${endpoint}`);
+            Object.keys(params).forEach(key => {
+                if (params[key] !== null && params[key] !== undefined) {
+                    url.searchParams.append(key, params[key]);
+                }
+            });
+
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (!data.success) {
+                throw new Error(data.error || 'Error en la API');
+            }
+            
+            return data;
+        }
+
+        // Load Site Statistics
+        async function loadSiteStats() {
+            try {
+                const data = await apiCall('/stats');
+                const stats = data.data;
+                
+                document.getElementById('totalArticles').textContent = 
+                    stats.total_articles || 0;
+                document.getElementById('totalViews').textContent = 
+                    (stats.total_views || 0).toLocaleString();
+                
+                // Update detailed stats in sidebar
+                const detailedStatsEl = document.getElementById('detailedStats');
+                detailedStatsEl.innerHTML = `
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: rgba(102, 126, 234, 0.1); border-radius: 10px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #667eea;">
+                                ${stats.total_articles || 0}
+                            </div>
+                            <div style="color: #666;">Artículos Totales</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: rgba(118, 75, 162, 0.1); border-radius: 10px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #764ba2;">
+                                ${stats.total_categories || 0}
+                            </div>
+                            <div style="color: #666;">Categorías</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: rgba(76, 175, 80, 0.1); border-radius: 10px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #4caf50;">
+                                ${(stats.total_views || 0).toLocaleString()}
+                            </div>
+                            <div style="color: #666;">Vistas Totales</div>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load Categories
+        async function loadCategories() {
+            try {
+                const data = await apiCall('/categories');
+                const categories = data.data;
+                
+                const navContent = document.getElementById('categoriesNav');
+                
+                // Keep "Todas" button and add categories
+                const allButton = navContent.querySelector('[data-category="all"]');
+                navContent.innerHTML = '';
+                navContent.appendChild(allButton);
+                
+                categories.forEach(category => {
+                    const navItem = document.createElement('a');
+                    navItem.href = '#';
+                    navItem.className = 'nav-item';
+                    navItem.dataset.category = category.slug;
+                    navItem.innerHTML = `
+                        <span style="width: 10px; height: 10px; background: ${category.color}; 
+                              border-radius: 50%; display: inline-block; margin-right: 0.5rem;"></span>
+                        ${category.name} (${category.article_count || 0})
+                    `;
+                    navContent.appendChild(navItem);
+                });
+                
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // Load Featured Article
+        async function loadFeaturedArticle() {
+            try {
+                const data = await apiCall('/featured');
+                const article = data.data;
+                
+                const featuredEl = document.getElementById('featuredArticle');
+                
+                if (!article) {
+                    featuredEl.innerHTML = `
+                        <div style="text-align: center; color: white; padding: 2rem;">
+                            <i class="fas fa-info-circle"></i> 
+                            No hay artículo destacado disponible
+                        </div>
+                    `;
+                    return;
+                }
+                
+                featuredEl.innerHTML = `
+                    <div class="featured-article fade-in" data-slug="${article.slug}">
+                        <img src="${article.featured_image || 'https://via.placeholder.com/800x300/667eea/ffffff?text=Imagen+no+disponible'}" 
+                             alt="${article.title}" class="featured-image">
+                        <div class="featured-content">
+                            <h3 class="featured-title">${article.title}</h3>
+                            <p class="featured-excerpt">${article.excerpt || ''}</p>
+                            <div class="article-meta">
+                                <div>
+                                    <span class="category-badge">${article.category_name || 'Sin categoría'}</span>
+                                    <span style="margin-left: 1rem;">
+                                        <i class="fas fa-user"></i> ${article.author_name || 'Autor desconocido'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-clock"></i> ${article.time_ago || article.published_at_formatted}
+                                    <span style="margin-left: 1rem;">
+                                        <i class="fas fa-eye"></i> ${article.views || 0}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading featured article:', error);
+                document.getElementById('featuredArticle').innerHTML = `
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Error al cargar el artículo destacado
+                    </div>
+                `;
+            }
+        }
+
+        // Load Articles
+        async function loadArticles(append = false) {
+            if (isLoading) return;
+            isLoading = true;
+            
+            try {
+                const params = {
+                    page: currentPage,
+                    limit: 12,
+                    category: currentCategory,
+                    featured: false
+                };
+                
+                if (currentSearch) {
+                    params.search = currentSearch;
+                }
+                
+                const data = await apiCall('/news', params);
+                const articles = data.data;
+                const pagination = data.pagination;
+                
+                const articlesGrid = document.getElementById('articlesGrid');
+                
+                if (!append) {
+                    articlesGrid.innerHTML = '';
+                }
+                
+                if (articles.length === 0 && !append) {
+                    articlesGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: white;">
+                            <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <h3>No se encontraron artículos</h3>
+                            <p>Intenta con otros términos de búsqueda o categoría</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                articles.forEach((article, index) => {
+                    const articleEl = document.createElement('div');
+                    articleEl.className = 'article-card';
+                    articleEl.dataset.slug = article.slug;
+                    articleEl.style.animationDelay = `${index * 0.1}s`;
+                    
+                    articleEl.innerHTML = `
+                        <img src="${article.featured_image || 'https://via.placeholder.com/400x200/667eea/ffffff?text=Imagen+no+disponible'}" 
+                             alt="${article.title}" class="article-image">
+                        <div class="article-content">
+                            <h3 class="article-title">${article.title}</h3>
+                            <p class="article-excerpt">${article.excerpt || ''}</p>
+                            <div class="article-meta">
+                                <div>
+                                    <span class="category-badge">${article.category_name || 'Sin categoría'}</span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-clock"></i> ${article.time_ago || article.published_at_formatted}
+                                </div>
+                            </div>
+                            <div class="article-meta" style="margin-top: 0.5rem;">
+                                <div>
+                                    <i class="fas fa-user"></i> ${article.author_name || 'Autor desconocido'}
+                                </div>
+                                <div>
+                                    <i class="fas fa-eye"></i> ${article.views || 0} vistas
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    articlesGrid.appendChild(articleEl);
+                });
+                
+                // Update pagination
+                updatePagination(pagination);
+                
+                // Re-initialize scroll animations for new elements
+                initScrollAnimations();
+                
+            } catch (error) {
+                console.error('Error loading articles:', error);
+                const articlesGrid = document.getElementById('articlesGrid');
+                articlesGrid.innerHTML = `
+                    <div class="error-message" style="grid-column: 1 / -1;">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Error al cargar los artículos: ${error.message}
+                    </div>
+                `;
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        // Load Sponsors
+        async function loadSponsors() {
+            try {
+                const data = await apiCall('/sponsors');
+                const sponsors = data.data;
+                
+                const sponsorsGrid = document.getElementById('sponsorsGrid');
+                
+                if (sponsors.length === 0) {
+                    sponsorsGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; color: #666;">
+                            No hay sponsors disponibles
+                        </div>
+                    `;
+                    return;
+                }
+                
+                sponsorsGrid.innerHTML = '';
+                sponsors.forEach(sponsor => {
+                    const sponsorEl = document.createElement('div');
+                    sponsorEl.className = 'sponsor-item';
+                    sponsorEl.innerHTML = `
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">${sponsor.name}</div>
+                        <div style="font-size: 0.8rem; color: #666;">
+                            Prioridad: ${sponsor.priority || 0}
+                        </div>
+                    `;
+                    
+                    if (sponsor.website_url) {
+                        sponsorEl.style.cursor = 'pointer';
+                        sponsorEl.onclick = () => window.open(sponsor.website_url, '_blank');
+                    }
+                    
+                    sponsorsGrid.appendChild(sponsorEl);
+                });
+                
+            } catch (error) {
+                console.error('Error loading sponsors:', error);
+                document.getElementById('sponsorsGrid').innerHTML = `
+                    <div style="color: #666; text-align: center;">
+                        Error al cargar sponsors
+                    </div>
+                `;
+            }
+        }
+
+        // Check for Promotional Modal
+        async function checkForPromotionalModal() {
+            try {
+                const data = await apiCall('/promotional-modal');
+                const modal = data.data;
+                
+                if (modal && modal.active) {
+                    showPromotionalModal(modal);
+                }
+                
+            } catch (error) {
+                console.error('Error checking promotional modal:', error);
+            }
+        }
+
+        // Show Promotional Modal
+        function showPromotionalModal(modalData) {
+            const modalEl = document.getElementById('articleModal');
+            const modalContent = document.getElementById('modalContent');
+            
+            modalContent.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <h2 style="color: #667eea; margin-bottom: 1rem;">${modalData.title}</h2>
+                    <div style="color: #666; line-height: 1.6; margin-bottom: 2rem;">
+                        ${modalData.content}
+                    </div>
+                    ${modalData.button_text && modalData.button_url ? `
+                        <a href="${modalData.button_url}" target="_blank" 
+                           style="display: inline-block; padding: 1rem 2rem; background: linear-gradient(45deg, #667eea, #764ba2); 
+                                  color: white; text-decoration: none; border-radius: 10px; font-weight: 500;">
+                            ${modalData.button_text}
+                        </a>
+                    ` : ''}
+                </div>
+            `;
+            
+            modalEl.style.display = 'block';
+            
+            // Auto-close after display duration if specified
+            if (modalData.display_duration) {
+                setTimeout(() => {
+                    closeModal();
+                }, modalData.display_duration * 1000);
+            }
+        }
+
+        // Update Pagination
+        function updatePagination(pagination) {
+            const paginationEl = document.getElementById('pagination');
+            
+            if (!pagination || pagination.total_pages <= 1) {
+                paginationEl.style.display = 'none';
+                return;
+            }
+            
+            paginationEl.style.display = 'flex';
+            paginationEl.innerHTML = '';
+            
+            // Previous button
+            if (pagination.page > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.className = 'page-btn';
+                prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+                prevBtn.onclick = () => changePage(pagination.page - 1);
+                paginationEl.appendChild(prevBtn);
+            }
+            
+            // Page numbers
+            const startPage = Math.max(1, pagination.page - 2);
+            const endPage = Math.min(pagination.total_pages, pagination.page + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === pagination.page ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => changePage(i);
+                paginationEl.appendChild(pageBtn);
+            }
+            
+            // Next button
+            if (pagination.page < pagination.total_pages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'page-btn';
+                nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                nextBtn.onclick = () => changePage(pagination.page + 1);
+                paginationEl.appendChild(nextBtn);
+            }
+        }
+
+        // Change Page
+        function changePage(page) {
+            currentPage = page;
+            loadArticles();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Load Individual Article
+        async function loadArticle(slug) {
+            try {
+                const data = await apiCall(`/article/${slug}`);
+                const article = data.data;
+                
+                const modalContent = document.getElementById('modalContent');
+                modalContent.innerHTML = `
+                    <div class="fade-in">
+                        <img src="${article.featured_image || 'https://via.placeholder.com/800x400/667eea/ffffff?text=Imagen+no+disponible'}" 
+                             alt="${article.title}" 
+                             style="width: 100%; height: 300px; object-fit: cover; border-radius: 10px; margin-bottom: 2rem;">
+                        
+                        <h1 style="color: #333; margin-bottom: 1rem; line-height: 1.3;">${article.title}</h1>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; 
+                                    margin-bottom: 2rem; padding: 1rem; background: rgba(102, 126, 234, 0.1); 
+                                    border-radius: 10px; flex-wrap: wrap; gap: 1rem;">
+                            <div>
+                                <span class="category-badge">${article.category_name || 'Sin categoría'}</span>
+                                <span style="margin-left: 1rem;">
+                                    <i class="fas fa-user"></i> ${article.author_name || 'Autor desconocido'}
+                                </span>
+                            </div>
+                            <div>
+                                <i class="fas fa-clock"></i> ${article.published_at_formatted || article.time_ago}
+                                <span style="margin-left: 1rem;">
+                                    <i class="fas fa-eye"></i> ${article.views || 0} vistas
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div style="line-height: 1.8; color: #444; margin-bottom: 2rem;">
+                            ${article.content}
+                        </div>
+                        
+                        ${article.tags && article.tags.length > 0 ? `
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="margin-bottom: 1rem; color: #667eea;">
+                                    <i class="fas fa-tags"></i> Etiquetas
+                                </h4>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    ${article.tags.map(tag => `
+                                        <span style="padding: 0.3rem 0.8rem; background: rgba(102, 126, 234, 0.1); 
+                                                     border-radius: 15px; font-size: 0.9rem; color: #667eea;">
+                                            #${tag}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${article.related_articles && article.related_articles.length > 0 ? `
+                            <div>
+                                <h4 style="margin-bottom: 1rem; color: #667eea;">
+                                    <i class="fas fa-link"></i> Artículos Relacionados
+                                </h4>
+                                <div style="display: grid; gap: 1rem;">
+                                    ${article.related_articles.map(related => `
+                                        <div style="display: flex; gap: 1rem; padding: 1rem; 
+                                                    background: rgba(102, 126, 234, 0.05); border-radius: 10px; 
+                                                    cursor: pointer; transition: all 0.3s ease;"
+                                             onclick="loadArticle('${related.slug}')"
+                                             onmouseover="this.style.background='rgba(102, 126, 234, 0.1)'"
+                                             onmouseout="this.style.background='rgba(102, 126, 234, 0.05)'">
+                                            <img src="${related.featured_image || 'https://via.placeholder.com/100x60/667eea/ffffff'}" 
+                                                 alt="${related.title}"
+                                                 style="width: 100px; height: 60px; object-fit: cover; border-radius: 5px;">
+                                            <div>
+                                                <h5 style="margin-bottom: 0.5rem; color: #333;">${related.title}</h5>
+                                                <p style="color: #666; font-size: 0.9rem; margin: 0;">
+                                                    ${related.excerpt ? related.excerpt.substring(0, 100) + '...' : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                document.getElementById('articleModal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading article:', error);
+                showError(`Error al cargar el artículo: ${error.message}`);
+            }
+        }
+
+        // Search Articles
+        async function searchArticles(query) {
+            try {
+                if (!query.trim()) {
+                    currentSearch = '';
+                    currentPage = 1;
+                    loadArticles();
+                    return;
+                }
+                
+                const data = await apiCall('/search', {
+                    q: query,
+                    limit: 20
+                });
+                
+                const results = data.data;
+                const articlesGrid = document.getElementById('articlesGrid');
+                
+                if (results.length === 0) {
+                    articlesGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: white;">
+                            <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <h3>No se encontraron resultados</h3>
+                            <p>No hay artículos que coincidan con "${query}"</p>
+                            <button onclick="clearSearch()" 
+                                    style="margin-top: 1rem; padding: 0.5rem 1rem; background: #667eea; 
+                                           color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                Limpiar búsqueda
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                articlesGrid.innerHTML = '';
+                
+                // Add search results header
+                const searchHeader = document.createElement('div');
+                searchHeader.style.cssText = `
+                    grid-column: 1 / -1; text-align: center; padding: 1rem; 
+                    background: rgba(255, 255, 255, 0.1); border-radius: 10px; 
+                    color: white; margin-bottom: 1rem;
+                `;
+                searchHeader.innerHTML = `
+                    <h3><i class="fas fa-search"></i> Resultados para "${query}"</h3>
+                    <p>${results.length} artículo${results.length !== 1 ? 's' : ''} encontrado${results.length !== 1 ? 's' : ''}</p>
+                    <button onclick="clearSearch()" 
+                            style="margin-top: 0.5rem; padding: 0.3rem 1rem; background: rgba(255, 255, 255, 0.2); 
+                                   color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        <i class="fas fa-times"></i> Limpiar búsqueda
+                    </button>
+                `;
+                articlesGrid.appendChild(searchHeader);
+                
+                results.forEach((article, index) => {
+                    const articleEl = document.createElement('div');
+                    articleEl.className = 'article-card';
+                    articleEl.dataset.slug = article.slug;
+                    articleEl.style.animationDelay = `${index * 0.1}s`;
+                    
+                    articleEl.innerHTML = `
+                        <img src="${article.featured_image || 'https://via.placeholder.com/400x200/667eea/ffffff?text=Imagen+no+disponible'}" 
+                             alt="${article.title}" class="article-image">
+                        <div class="article-content">
+                            <h3 class="article-title">${article.title}</h3>
+                            <p class="article-excerpt">${article.excerpt || ''}</p>
+                            <div class="article-meta">
+                                <div>
+                                    <span class="category-badge">${article.category_name || 'Sin categoría'}</span>
+                                    ${article.relevance ? `
+                                        <span style="margin-left: 0.5rem; padding: 0.2rem 0.5rem; 
+                                                     background: rgba(76, 175, 80, 0.1); color: #4caf50; 
+                                                     border-radius: 10px; font-size: 0.8rem;">
+                                            ${Math.round(article.relevance * 100)}% relevante
+                                        </span>
+                                    ` : ''}
+                                </div>
+                                <div>
+                                    <i class="fas fa-clock"></i> ${article.time_ago || article.published_at_formatted}
+                                </div>
+                            </div>
+                            <div class="article-meta" style="margin-top: 0.5rem;">
+                                <div>
+                                    <i class="fas fa-user"></i> ${article.author_name || 'Autor desconocido'}
+                                </div>
+                                <div>
+                                    <i class="fas fa-eye"></i> ${article.views || 0} vistas
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    articlesGrid.appendChild(articleEl);
+                });
+                
+                // Hide pagination for search results
+                document.getElementById('pagination').style.display = 'none';
+                
+                // Re-initialize scroll animations
+                initScrollAnimations();
+                
+            } catch (error) {
+                console.error('Error searching articles:', error);
+                showError(`Error en la búsqueda: ${error.message}`);
+            }
+        }
+
+        // Clear Search
+        function clearSearch() {
+            currentSearch = '';
+            currentPage = 1;
+            document.getElementById('searchInput').value = '';
+            loadArticles();
+        }
+
+        // Newsletter Subscription
+        async function subscribeNewsletter(email, name = '') {
+            try {
+                const response = await fetch(`${API_BASE}/newsletter/subscribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        name: name
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess('¡Suscripción exitosa! Gracias por suscribirte a nuestro newsletter.');
+                    document.getElementById('newsletterForm').reset();
+                } else {
+                    throw new Error(data.error || 'Error en la suscripción');
+                }
+                
+            } catch (error) {
+                console.error('Error subscribing to newsletter:', error);
+                showError(`Error en la suscripción: ${error.message}`);
+            }
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    const query = this.value.trim();
+                    if (query.length >= 3 || query.length === 0) {
+                        currentSearch = query;
+                        searchArticles(query);
+                    }
+                }, 500);
+            });
+            
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    clearTimeout(searchTimeout);
+                    const query = this.value.trim();
+                    currentSearch = query;
+                    searchArticles(query);
+                }
+            });
+            
+            // Category navigation
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.nav-item')) {
+                    e.preventDefault();
+                    const navItem = e.target.closest('.nav-item');
+                    const category = navItem.dataset.category;
+                    
+                    // Update active state
+                    document.querySelectorAll('.nav-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    navItem.classList.add('active');
+                    
+                    // Load articles for category
+                    currentCategory = category;
+                    currentPage = 1;
+                    currentSearch = '';
+                    document.getElementById('searchInput').value = '';
+                    loadArticles();
+                }
+                
+                // Article click handlers
+                if (e.target.closest('.article-card') || e.target.closest('.featured-article')) {
+                    const element = e.target.closest('.article-card') || e.target.closest('.featured-article');
+                    const slug = element.dataset.slug;
+                    if (slug) {
+                        loadArticle(slug);
+                    }
+                }
+            });
+            
+            // Newsletter form
+            document.getElementById('newsletterForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const email = this.querySelector('input[type="email"]').value;
+                const name = this.querySelector('input[type="text"]').value;
+                subscribeNewsletter(email, name);
+            });
+            
+            // Modal close
+            document.getElementById('articleModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+                if (e.key === '/' && !e.target.closest('input, textarea')) {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+            });
+        }
+
+        // Scroll Animations
+        function initScrollAnimations() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            });
+            
+            document.querySelectorAll('.article-card, .widget').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Utility Functions
+        function closeModal() {
+            document.getElementById('articleModal').style.display = 'none';
+        }
+
+        function showError(message) {
+            const messageEl = document.getElementById('newsletterMessage');
+            messageEl.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i> ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                messageEl.innerHTML = '';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const messageEl = document.getElementById('newsletterMessage');
+            messageEl.innerHTML = `
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                messageEl.innerHTML = '';
+            }, 5000);
+        }
+
+        // Service Worker for offline capability (optional)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Service worker registration would go here
+                console.log('San Luis Opina web app loaded successfully');
+            });
+        }
+
+        // Performance monitoring
+        window.addEventListener('load', () => {
+            if (performance.mark) {
+                performance.mark('app-loaded');
+                console.log('App loaded in:', performance.now(), 'ms');
+            }
+        });
+    </script>
+</body>
+</html>
