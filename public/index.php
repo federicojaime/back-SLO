@@ -238,7 +238,7 @@ switch ($path) {
             ORDER BY a.created_at DESC
             LIMIT :limit OFFSET :offset
         ");
-        $stmt->bindValue(':limit',  $limit,  PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         $articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -486,10 +486,10 @@ switch ($path) {
         break;
 
     // ==========================================
-    // APIS PÚBLICAS COMPLETAS
+    // APIS PÚBLICAS COMPLETAS - CORREGIDAS
     // ==========================================
 
-    // API para el frontend público - Lista de noticias
+    // API para el frontend público - Lista de noticias (CORREGIDO)
     case '/api/news':
         header('Content-Type: application/json');
         header('Access-Control-Allow-Origin: *');
@@ -536,9 +536,12 @@ switch ($path) {
         $sql .= " ORDER BY a.published_at DESC, a.created_at DESC LIMIT :limit OFFSET :offset";
 
         $stmt = $pdo->prepare($sql);
+
+        // ✅ CORREGIDO: Bind de parámetros dinámicos primero
         foreach ($params as $i => $param) {
             $stmt->bindValue($i + 1, $param);
         }
+        // Luego bind de parámetros nombrados
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -646,7 +649,7 @@ switch ($path) {
         ]);
         break;
 
-    // API - Búsqueda de artículos
+    // API - Búsqueda de artículos (CORREGIDO)
     case '/api/search':
         header('Content-Type: application/json');
         header('Access-Control-Allow-Origin: *');
@@ -659,21 +662,22 @@ switch ($path) {
             exit;
         }
 
+        // ✅ SOLUCIÓN FINAL: Usar parámetros nombrados para todo
         $stmt = $pdo->prepare("
             SELECT 
                 a.id, a.title, a.slug, a.excerpt, a.featured_image,
                 a.published_at, a.created_at,
-                c.name AS category_name, c.color AS category_color,
-                MATCH(a.title, a.content, a.excerpt) AGAINST(? IN BOOLEAN MODE) AS relevance
+                c.name AS category_name, c.color AS category_color
             FROM articles a
             LEFT JOIN categories c ON a.category_id = c.id
             WHERE a.status = 'published' 
-            AND MATCH(a.title, a.content, a.excerpt) AGAINST(? IN BOOLEAN MODE)
-            ORDER BY relevance DESC, a.published_at DESC
+            AND (a.title LIKE :search OR a.content LIKE :search OR a.excerpt LIKE :search)
+            ORDER BY a.published_at DESC, a.created_at DESC
             LIMIT :limit
         ");
-        $stmt->bindValue(1, $query);
-        $stmt->bindValue(2, $query);
+
+        $searchTerm = "%$query%";
+        $stmt->bindValue(':search', $searchTerm, PDO::PARAM_STR);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
 
@@ -771,10 +775,9 @@ switch ($path) {
             LEFT JOIN categories c ON a.category_id = c.id
             WHERE a.status = 'published'
             ORDER BY a.published_at DESC, a.created_at DESC
-            LIMIT :limit
+            LIMIT ?
         ");
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
+        $stmt->execute([$limit]);
 
         $articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
